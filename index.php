@@ -1,0 +1,329 @@
+<?php
+session_start();
+if (!isset($_SESSION['user_id'])) {
+    header("Location: auth.php");
+    exit();
+}
+include 'db.php';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="cinematic.css" />
+    <title>HOSTEL FINDER - Home</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        /* Comparison page styles */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .comparison-table th,
+        .comparison-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        .comparison-table th {
+            background-color: #2e8b57;
+            color: white;
+        }
+        .comparison-table td.checkmark {
+            color: green;
+            font-weight: bold;
+        }
+        .comparison-table td.crossmark {
+            color: red;
+            font-weight: bold;
+        }
+
+        /* Forum page styles */
+        .forum-container {
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .forum-topic {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .forum-topic:last-child {
+            border-bottom: none;
+        }
+        .forum-topic button {
+            background-color: #2e8b57;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .forum-topic button:hover {
+            background-color: #1e5e3a;
+        }
+        .add-topic-btn {
+            margin-top: 15px;
+            background-color: #2e8b57;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .add-topic-btn:hover {
+            background-color: #1e5e3a;
+        }
+
+        /* Guidelines page styles */
+        .guidelines-container {
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .guideline-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 1rem;
+            color: #333;
+        }
+        .guideline-item svg {
+            fill: #2e8b57;
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+        }
+
+        /* Map view page styles */
+        .map-container {
+            margin-top: 20px;
+            width: 100%;
+            height: 500px;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1 class="logo"><img src="images/logo.png" alt="Hostel Finder Logo" /> HOSTEL FINDER</h1>
+            <nav class="nav">
+                <ul>
+                    <li><a href="#hostels" class="active">Hostels</a></li>
+                    <li><a href="contact.php">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <section class="hero-section animate__animated animate__fadeIn">
+            <div class="hero-content">
+                <h2 class="animate__animated animate__slideInUp">Find Your Ideal Space</h2>
+                <p class="animate__animated animate__fadeIn animate__delay-1s">Premium student accommodations designed for your success.</p>
+            </div>
+        </section>
+
+        <section id="hostels" class="search-filter animate-slideInLeft">
+            <input type="text" id="searchInput" placeholder="Search hostels..." />
+            <select id="filterSelect">
+                <option value="">All Locations</option>
+                <?php
+                $locationSql = "SELECT DISTINCT location FROM hostels WHERE status = 'approved' ORDER BY location";
+                $locationResult = $conn->query($locationSql);
+                if ($locationResult->num_rows > 0) {
+                    while ($locationRow = $locationResult->fetch_assoc()) {
+                        $location = htmlspecialchars($locationRow['location']);
+                        echo '<option value="' . $location . '">' . $location . '</option>';
+                    }
+                }
+                ?>
+            </select>
+            <button id="searchBtn">Search</button>
+        </section>
+
+        <section id="hostel-listings" class="hostel-listings animate-fadeInUp">
+            <?php
+            $sql = "SELECT * FROM hostels WHERE status = 'approved'";
+            $result = $conn->query($sql);
+
+            if ($result->num_rows > 0) {
+                while ($row = $result->fetch_assoc()) {
+                    echo '<article class="hostel-card animate-fadeInUp">';
+                    echo '<img src="' . htmlspecialchars($row['image']) . '" alt="' . htmlspecialchars($row['name']) . '" />';
+                    echo '<h3>' . htmlspecialchars($row['name']) . '</h3>';
+                    echo '<p>Location: ' . htmlspecialchars($row['location']) . '</p>';
+                    echo '<p>Price: UGX ' . htmlspecialchars($row['price']) . '</p>';
+                    echo '<button class="details-btn" onclick="location.href=\'hostel-details.php?id=' . $row['id'] . '\'">View Details</button>';
+                    echo '</article>';
+                }
+            } else {
+                echo '<p>No hostels available.</p>';
+            }
+            ?>
+        </section>
+    </main>
+
+    <section id="comparison" class="container main-content">
+        <h2>Compare Hostels</h2>
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Feature</th>
+<?php
+// Fetch up to 3 hostels for comparison
+$compareSql = "SELECT * FROM hostels WHERE status = 'approved' ORDER BY id DESC LIMIT 3";
+$compareResult = $conn->query($compareSql);
+$hostels = [];
+if ($compareResult->num_rows > 0) {
+    while ($row = $compareResult->fetch_assoc()) {
+        $hostels[] = $row;
+        echo '<th>' . htmlspecialchars($row['name']) . '</th>';
+    }
+} else {
+    echo '<th>No hostels available</th>';
+}
+?>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Price</td>
+<?php
+foreach ($hostels as $hostel) {
+    echo '<td>UGX ' . htmlspecialchars($hostel['price']) . '</td>';
+}
+?>
+                </tr>
+                <tr>
+                    <td>Rooms</td>
+<?php
+foreach ($hostels as $hostel) {
+    echo '<td>' . htmlspecialchars($hostel['rooms']) . '</td>';
+}
+?>
+                </tr>
+                <tr>
+                    <td>Bathrooms</td>
+<?php
+foreach ($hostels as $hostel) {
+    echo '<td>' . htmlspecialchars($hostel['bathrooms']) . '</td>';
+}
+?>
+                </tr>
+                <tr>
+                    <td>WiFi</td>
+<?php
+foreach ($hostels as $hostel) {
+    $wifi = strtolower($hostel['wifi']) === 'available' ? '&#10003;' : '&#10007;';
+    echo '<td class="checkmark">' . $wifi . '</td>';
+}
+?>
+                </tr>
+                <tr>
+                    <td>Distance from the University to the hostel</td>
+<?php
+foreach ($hostels as $hostel) {
+    $distance = htmlspecialchars($hostel['distance'] ?? 'N/A');
+    echo '<td>' . $distance . '</td>';
+}
+?>
+                </tr>
+                <tr>
+                    <td>Location</td>
+<?php
+foreach ($hostels as $hostel) {
+    echo '<td>' . htmlspecialchars($hostel['location']) . '</td>';
+}
+?>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section id="roommates" class="container main-content">
+        <h2>Find Roommates</h2>
+        <div class="forum-container">
+            <?php
+            $roommateSql = "SELECT * FROM roommates ORDER BY created_at DESC";
+            $roommateResult = $conn->query($roommateSql);
+            if ($roommateResult->num_rows > 0) {
+                while ($roommate = $roommateResult->fetch_assoc()) {
+                    echo '<div class="forum-topic">';
+                    echo '<span>' . htmlspecialchars($roommate['name']) . ' from ' . htmlspecialchars($roommate['area_of_origin']) . ' - <a href="contact-roommate.php?phone=' . urlencode($roommate['phone']) . '">' . htmlspecialchars($roommate['phone']) . '</a></span>';
+                    echo '</div>';
+                }
+            } else {
+                echo '<p>No roommates available.</p>';
+            }
+            ?>
+            <button class="add-topic-btn" onclick="location.href='register-roommate.php'">Register to Find Roommate</button>
+        </div>
+    </section>
+
+    <section id="guidelines" class="container main-content">
+        <h2>Guidelines</h2>
+        <div class="guidelines-container">
+            <div class="guideline-item">
+                <svg viewBox="0 0 24 24"><path d="M20.285 6.709l-11.39 11.39-5.285-5.285 1.414-1.414 3.871 3.871 9.976-9.976z"/></svg>
+                <span>Hostels are safe & secure</span>
+            </div>
+            <div class="guideline-item">
+                <svg viewBox="0 0 24 24"><path d="M20.285 6.709l-11.39 11.39-5.285-5.285 1.414-1.414 3.871 3.871 9.976-9.976z"/></svg>
+                <span>Free WiFi available</span>
+            </div>
+            <div class="guideline-item">
+                <svg viewBox="0 0 24 24"><path d="M20.285 6.709l-11.39 11.39-5.285-5.285 1.414-1.414 3.871 3.871 9.976-9.976z"/></svg>
+                <span>24/7 Security</span>
+            </div>
+            <div class="guideline-item">
+                <svg viewBox="0 0 24 24"><path d="M20.285 6.709l-11.39 11.39-5.285-5.285 1.414-1.414 3.871 3.871 9.976-9.976z"/></svg>
+                <span>Easy booking process</span>
+            </div>
+        </div>
+    </section>
+
+    <section id="map-view" class="container main-content">
+        <h2>Hostel Locations Map</h2>
+        <div class="map-container">
+            <iframe 
+                src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d9951.123456789012!2d29.987654321!3d-1.250000000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sug!4v1680000000000!5m2!1sen!2sug"  
+                width="100%" 
+                height="100%" 
+                style="border:0;" 
+                allowfullscreen="" 
+                loading="lazy" 
+                referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>&copy; 2026 HOSTEL FINDER. All rights reserved.</p>
+    </footer>
+
+    <script src="scripts.js"></script>
+</body>
+</html>
